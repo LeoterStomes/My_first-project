@@ -38,6 +38,15 @@ if (!isset($_SESSION['username'])) {
             color: #444;
             line-height: 1.8;
         }
+        .help-section code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }
     </style>
 </head>
 <body>
@@ -59,104 +68,183 @@ if (!isset($_SESSION['username'])) {
             <div class="help-section">
                 <h3>暴力破解 (Brute Force)</h3>
                 <p>
-                    <strong>这是什么？</strong> 暴力破解是一种密码破解方法，通过系统地、穷举地尝试所有可能的密码组合来获取访问权限。<br>
-                    <strong>练习目标：</strong> 在本靶场中，您将尝试对一个登录表单进行自动化攻击，以找出正确的用户名和密码。不同难度级别会引入不同的防御机制，如延迟或令牌。
+                    <strong>核心概念：</strong> 通过穷举所有可能的密码组合来破解账户。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接尝试常见用户名（admin、root、test）和密码（123456、password、admin）<br>
+                    • <strong>Level 2：</strong> 使用自动化工具，注意服务器可能有延迟机制<br>
+                    • <strong>Level 3：</strong> 需要绕过CSRF Token，先获取Token再提交<br>
+                    • <strong>Level 4：</strong> 结合Token验证和账户锁定，需要更精细的策略<br>
+                    <strong>学习价值：</strong> 理解密码策略的重要性，学会使用Burp Suite等工具进行自动化攻击。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>命令注入 (Command Injection)</h3>
                 <p>
-                    <strong>这是什么？</strong> 命令注入是一种安全漏洞，允许攻击者在Web服务器上执行任意的操作系统命令。这通常发生在应用程序将用户输入直接传递给系统shell时。<br>
-                    <strong>练习目标：</strong> 本靶场模拟一个 `ping` 工具。您需要尝试绕过输入过滤，执行除了 `ping` 以外的其他系统命令。
+                    <strong>核心概念：</strong> 利用应用程序直接执行系统命令的漏洞。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接注入 <code>&</code>、<code>&&</code>、<code>|</code>、<code>;</code> 等命令连接符，例如：<code>127.0.0.1 & whoami</code>、<code>127.0.0.1 && cat /etc/passwd</code><br>
+                    • <strong>Level 2：</strong> 过滤了 <code>&&</code> 和 <code>;</code>，尝试 <code>&</code> 或 <code>|</code><br>
+                    • <strong>Level 3：</strong> 过滤更多字符，尝试换行符 <code>\n</code> 或编码绕过<br>
+                    • <strong>Level 4：</strong> 严格验证IP格式，几乎无法注入<br>
+                    <strong>学习价值：</strong> 掌握命令注入的检测和绕过技巧，理解输入验证的重要性。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>跨站请求伪造 (CSRF)</h3>
                 <p>
-                    <strong>这是什么？</strong> CSRF 是一种迫使已登录的用户在不知情的情况下，执行非本意的操作的攻击。攻击者可以诱导用户点击一个链接，从而以用户的名义执行如修改密码、转账等操作。<br>
-                    <strong>练习目标：</strong> 本靶场提供一个修改密码的表单。您需要理解并尝试在没有有效防御的情况下，如何构造一个恶意请求来利用此漏洞。
+                    <strong>核心概念：</strong> 诱导已登录用户执行非本意操作的攻击。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接修改密码，无任何防护<br>
+                    • <strong>Level 2：</strong> 需要绕过Referer检查，构造恶意页面<br>
+                    • <strong>Level 3：</strong> 需要CSRF Token，先获取Token再构造请求<br>
+                    • <strong>Level 4：</strong> 需要当前密码验证，几乎无法攻击<br>
+                    <strong>学习价值：</strong> 理解CSRF攻击原理，学会构造恶意请求和绕过防护。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>文件包含 (File Inclusion)</h3>
                 <p>
-                    <strong>这是什么？</strong> 文件包含漏洞允许攻击者在服务器上包含并执行或显示文件。这可以用于读取敏感文件（如配置文件），甚至在特定条件下执行远程代码。<br>
-                    <strong>练习目标：</strong> 您需要通过操纵URL中的 `page` 参数，尝试包含服务器上的其他文件，以理解该漏洞的原理和不同级别下的过滤绕过方法。
+                    <strong>核心概念：</strong> 利用应用程序包含文件的漏洞读取或执行任意文件。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接包含系统文件，如 <code>../../../etc/passwd</code><br>
+                    • <strong>Level 2：</strong> 过滤 <code>../</code>，尝试编码绕过或绝对路径<br>
+                    • <strong>Level 3：</strong> 只允许包含特定目录，尝试路径遍历<br>
+                    • <strong>Level 4：</strong> 白名单验证，几乎无法绕过<br>
+                    <strong>学习价值：</strong> 掌握路径遍历技巧，理解文件包含漏洞的危害。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>文件上传 (File Upload)</h3>
                 <p>
-                    <strong>这是什么？</strong> 文件上传漏洞是指应用程序未对上传的文件类型、内容或扩展名进行严格校验，导致攻击者可以上传恶意文件（如WebShell），进而控制服务器。<br>
-                    <strong>练习目标：</strong> 在本靶场中，您需要尝试上传不同类型的文件，绕过文件类型、扩展名或内容的限制，最终实现上传并访问恶意脚本文件。
+                    <strong>核心概念：</strong> 绕过文件上传限制，上传恶意文件控制服务器。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接上传PHP文件，如 <code>shell.php</code><br>
+                    • <strong>Level 2：</strong> 检查文件扩展名，尝试双扩展名如 <code>shell.php.jpg</code><br>
+                    • <strong>Level 3：</strong> 检查文件内容，尝试在图片中嵌入PHP代码<br>
+                    • <strong>Level 4：</strong> 多重验证，需要更复杂的绕过技巧<br>
+                    <strong>学习价值：</strong> 理解文件上传安全机制，学会各种绕过技巧。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>不安全的验证码 (Insecure CAPTCHA)</h3>
                 <p>
-                    <strong>这是什么？</strong> 不安全的验证码是指验证码生成或校验存在逻辑漏洞，攻击者可以通过重放、预测、绕过等方式轻松通过验证。<br>
-                    <strong>练习目标：</strong> 本靶场提供一个带有验证码的表单。您需要分析验证码的生成和校验机制，尝试绕过验证码保护，自动化提交表单。
+                    <strong>核心概念：</strong> 利用验证码生成或验证逻辑的漏洞。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 验证码固定为1234，直接输入即可<br>
+                    • <strong>Level 2：</strong> 验证码简单可预测，尝试暴力破解<br>
+                    • <strong>Level 3：</strong> 验证码复杂但仍可分析，尝试重放攻击<br>
+                    • <strong>Level 4：</strong> 模拟图形验证码，但仍有逻辑漏洞<br>
+                    <strong>学习价值：</strong> 理解验证码安全设计，学会绕过验证码保护。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>SQL注入 (SQL Injection)</h3>
                 <p>
-                    <strong>这是什么？</strong> SQL注入是一种常见的安全漏洞，攻击者通过在输入中注入恶意SQL语句，操纵数据库查询，获取、修改或删除数据。<br>
-                    <strong>练习目标：</strong> 在本靶场中，您需要尝试构造特殊的输入，获取数据库中的敏感信息。不同难度下会有不同的过滤或防护措施，体验注入与防御的攻防过程。
+                    <strong>核心概念：</strong> 在数据库查询中注入恶意SQL语句。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接注入，如 <code>1' OR '1'='1</code>、<code>1; DROP TABLE users;--</code><br>
+                    • <strong>Level 2：</strong> 过滤关键字，尝试大小写混淆或注释绕过<br>
+                    • <strong>Level 3：</strong> 只允许数字，尝试类型转换或编码绕过<br>
+                    • <strong>Level 4：</strong> 预处理语句，几乎无法注入<br>
+                    <strong>学习价值：</strong> 掌握SQL注入的检测和利用技巧，理解数据库安全。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>SQL盲注 (SQLi - Blind)</h3>
                 <p>
-                    <strong>这是什么？</strong> SQL盲注是一种特殊的SQL注入，页面不会直接返回查询结果或错误信息，攻击者只能通过页面的行为（如布尔值、延时）间接推断数据。<br>
-                    <strong>练习目标：</strong> 本靶场模拟了无回显的注入环境。您需要利用布尔型或时间型盲注技巧，逐步推断出数据库中的敏感信息。
+                    <strong>核心概念：</strong> 在无回显的情况下通过布尔逻辑推断数据。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 使用布尔型盲注，如 <code>1' AND length(username)=5--</code><br>
+                    • <strong>Level 2：</strong> 过滤关键字，尝试编码或注释绕过<br>
+                    • <strong>Level 3：</strong> 只允许数字，尝试类型转换<br>
+                    • <strong>Level 4：</strong> 预处理语句防护<br>
+                    <strong>学习价值：</strong> 掌握盲注技巧，学会通过间接方式获取数据。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>反射型XSS (Reflected XSS)</h3>
                 <p>
-                    <strong>这是什么？</strong> 反射型XSS是指攻击者将恶意脚本注入到URL参数中，受害者点击链接后，脚本被反射到页面并执行。<br>
-                    <strong>练习目标：</strong> 在本靶场中，您需要构造带有恶意脚本的URL，诱导用户访问，观察脚本是否被执行，并尝试绕过不同级别的过滤。
+                    <strong>核心概念：</strong> 恶意脚本通过URL参数反射到页面执行。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接注入 <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code><br>
+                    • <strong>Level 2：</strong> 过滤script标签，尝试事件属性如 <code>onerror=alert(1)</code><br>
+                    • <strong>Level 3：</strong> 严格字符过滤，尝试编码绕过<br>
+                    • <strong>Level 4：</strong> 完全转义，几乎无法注入<br>
+                    <strong>学习价值：</strong> 理解XSS攻击原理，学会构造恶意脚本。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>存储型XSS (Stored XSS)</h3>
                 <p>
-                    <strong>这是什么？</strong> 存储型XSS是指恶意脚本被存储在服务器（如评论、文章等）中，所有访问该内容的用户都会被攻击。<br>
-                    <strong>练习目标：</strong> 本靶场允许您提交内容到服务器。尝试注入脚本并刷新页面，观察脚本是否被执行，体验不同防护级别下的效果。
+                    <strong>核心概念：</strong> 恶意脚本存储在服务器中，影响所有访问用户。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接提交恶意脚本到留言板<br>
+                    • <strong>Level 2：</strong> 过滤部分标签，尝试其他标签或事件属性<br>
+                    • <strong>Level 3：</strong> 严格字符限制，尝试编码绕过<br>
+                    • <strong>Level 4：</strong> 完全转义防护<br>
+                    <strong>学习价值：</strong> 理解存储型XSS的危害，学会检测和防护。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>DOM型XSS (DOM Based XSS)</h3>
                 <p>
-                    <strong>这是什么？</strong> DOM型XSS是指恶意脚本通过前端JavaScript操作DOM节点实现注入和执行，通常不与服务器交互。<br>
-                    <strong>练习目标：</strong> 在本靶场中，您需要分析和利用前端JavaScript代码的漏洞，通过修改URL片段或参数，实现脚本注入和执行。
+                    <strong>核心概念：</strong> 通过前端JavaScript操作DOM实现脚本注入。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 直接修改URL参数，如 <code>?message=&lt;script&gt;alert(1)&lt;/script&gt;</code><br>
+                    • <strong>Level 2：</strong> 过滤script标签，尝试其他标签<br>
+                    • <strong>Level 3：</strong> 字符限制，尝试编码绕过<br>
+                    • <strong>Level 4：</strong> 完全转义防护<br>
+                    <strong>学习价值：</strong> 理解DOM操作安全，学会前端漏洞利用。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>弱会话ID (Weak Session IDs)</h3>
                 <p>
-                    <strong>这是什么？</strong> 弱会话ID是指服务器生成的会话标识符（Session ID）过于简单或可预测，攻击者可以通过猜测或暴力破解获取他人会话。<br>
-                    <strong>练习目标：</strong> 本靶场演示了不同强度的会话ID生成方式。您可以尝试预测、伪造或暴力破解会话ID，体验会话劫持的过程。
+                    <strong>核心概念：</strong> 利用可预测的会话标识符进行会话劫持。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> 会话ID为简单数字，容易预测<br>
+                    • <strong>Level 2：</strong> 会话ID复杂但仍可分析规律<br>
+                    • <strong>Level 3：</strong> 会话ID更复杂，需要更深入分析<br>
+                    • <strong>Level 4：</strong> 使用加密随机数，几乎无法预测<br>
+                    <strong>学习价值：</strong> 理解会话管理安全，学会会话劫持技术。
                 </p>
             </div>
 
             <div class="help-section">
                 <h3>绕过内容安全策略 (CSP)</h3>
                 <p>
-                    <strong>这是什么？</strong> 内容安全策略（CSP）是一种Web安全机制，用于限制页面可加载的资源类型和来源，防止XSS等攻击。<br>
-                    <strong>练习目标：</strong> 在本靶场中，您可以尝试注入不同类型的脚本，观察在不同CSP策略下，哪些脚本能够被执行，哪些被阻止，学习CSP的防护原理与绕过技巧。
+                    <strong>核心概念：</strong> 绕过CSP限制执行恶意脚本。<br>
+                    <strong>实战要点：</strong><br>
+                    • <strong>Level 1：</strong> CSP配置宽松，容易绕过<br>
+                    • <strong>Level 2：</strong> CSP限制部分资源，尝试其他绕过方式<br>
+                    • <strong>Level 3：</strong> CSP较严格，需要更复杂的绕过技巧<br>
+                    • <strong>Level 4：</strong> CSP配置完善，几乎无法绕过<br>
+                    <strong>学习价值：</strong> 理解CSP防护机制，学会绕过技巧。
+                </p>
+            </div>
+
+            <div class="help-section">
+                <h3>🎯 学习建议</h3>
+                <p>
+                    <strong>循序渐进：</strong> 从Level 1开始，逐步提升难度<br>
+                    <strong>工具使用：</strong> 学会使用Burp Suite、OWASP ZAP等工具<br>
+                    <strong>代码分析：</strong> 理解每个靶场的源代码和防护逻辑<br>
+                    <strong>实战练习：</strong> 在真实环境中练习这些技术<br>
+                    <strong>防护学习：</strong> 不仅要学会攻击，更要理解如何防护
+                </p>
+                <p style="color: #d48806; font-weight: bold;">
+                    这些靶场涵盖了Web安全的核心漏洞类型，通过系统学习可以建立完整的安全知识体系！
                 </p>
             </div>
 

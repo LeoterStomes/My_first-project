@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current_user = $_SESSION['username'] ?? 'guest';
     // 这里假设有变量 $csp_result 表示操作结果
     $result = (isset($csp_result) && strpos($csp_result, '成功') !== false) ? 'success' : 'fail';
-    log_action($current_user, 'csp', 'CSP操作', $result);
+    log_action($current_user, 'csp_bypass', 'CSP绕过操作', $result);
 
     $error_count = 0;
     if (isset($csp_message) && strpos($csp_message, '成功') === false) {

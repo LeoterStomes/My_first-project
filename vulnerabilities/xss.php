@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $xss_result = "<div>留言已提交！</div>";
     }
     $result = (isset($xss_result) && strpos($xss_result, '留言已提交') !== false) ? 'success' : 'fail';
-    log_action($current_user, 'xss', 'XSS操作', $result);
+    log_action($current_user, 'stored_xss', '存储型XSS操作', $result);
 
     $error_count = 0;
     if (isset($xss_result) && strpos($xss_result, '成功') === false) {

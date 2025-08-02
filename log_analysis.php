@@ -192,16 +192,44 @@ ksort($trend);
 $user_list = $user_list;
 // 统计选中用户的操作类型分布
 $user_action_stat = $user_action_stat;
-$user_action_labels = json_encode(array_values(array_filter(array_keys($user_action_stat), 'strlen')), JSON_UNESCAPED_UNICODE);
+$user_action_labels = json_encode(array_map(function($key) use ($action_chinese_names) {
+    return $action_chinese_names[$key] ?? $key;
+}, array_values(array_filter(array_keys($user_action_stat), 'strlen'))), JSON_UNESCAPED_UNICODE);
 $user_action_data = json_encode(array_values($user_action_stat));
-// 靶场类型颜色映射
+// 靶场类型颜色映射 - 更新为13个靶场
 $action_colors = [
-    'injection' => '#f44336', // SQL注入
     'forcebreak' => '#ff9800', // 暴力破解
-    'file_upload' => '#ffc107', // 恶意软件/文件上传
-    'xss' => '#2196f3', // XSS跨站
+    'command_injection' => '#f44336', // 命令注入
+    'csrf' => '#9c27b0', // 跨站请求伪造
+    'file_inclusion' => '#795548', // 文件包含
+    'file_upload' => '#ffc107', // 文件上传
+    'insecure_captcha' => '#607d8b', // 不安全的验证码
+    'sql_injection' => '#e91e63', // SQL注入
+    'blind_sql' => '#3f51b5', // SQL盲注
+    'reflected_xss' => '#2196f3', // 反射型XSS
+    'stored_xss' => '#00bcd4', // 存储型XSS
+    'dom_xss' => '#4caf50', // DOM型XSS
+    'weak_session' => '#8bc34a', // 弱会话ID
+    'csp_bypass' => '#ff5722', // 绕过内容安全策略
     'other' => '#9e9e9e', // 其他
-    // 可继续补充
+];
+
+// 操作类型中文映射
+$action_chinese_names = [
+    'forcebreak' => '暴力破解',
+    'command_injection' => '命令注入',
+    'csrf' => '跨站请求伪造',
+    'file_inclusion' => '文件包含',
+    'file_upload' => '文件上传',
+    'insecure_captcha' => '不安全的验证码',
+    'sql_injection' => 'SQL注入',
+    'blind_sql' => 'SQL盲注',
+    'reflected_xss' => '反射型XSS',
+    'stored_xss' => '存储型XSS',
+    'dom_xss' => 'DOM型XSS',
+    'weak_session' => '弱会话ID',
+    'csp_bypass' => '绕过内容安全策略',
+    'other' => '其他'
 ];
 $user_action_colors = [];
 foreach (array_keys($user_action_stat) as $act) {
@@ -224,7 +252,9 @@ if (isset($_GET['export']) && $_GET['export'] === 'excel') {
     header('Content-Disposition: attachment; filename="user_logs.xls"');
     echo "时间\t用户名\t操作类型\t操作详情\t结果\tIP\n";
     foreach ($filtered_logs as $log) {
-        echo implode("\t", array_map('htmlspecialchars', $log)) . "\n";
+        $log_copy = $log;
+        $log_copy['action'] = $action_chinese_names[$log['action']] ?? $log['action'];
+        echo implode("\t", array_map('htmlspecialchars', $log_copy)) . "\n";
     }
     exit;
 }
@@ -265,12 +295,16 @@ function highlight($text, $keyword) {
 }
 
 // 生成前端用的统计数据
-$action_labels = json_encode(array_keys($action_stat), JSON_UNESCAPED_UNICODE);
+$action_labels = json_encode(array_map(function($key) use ($action_chinese_names) {
+    return $action_chinese_names[$key] ?? $key;
+}, array_keys($action_stat)), JSON_UNESCAPED_UNICODE);
 $action_data = json_encode(array_values($action_stat));
 $trend_labels = json_encode(array_keys($trend));
 $trend_data = json_encode(array_values($trend));
 // 右下角用户靶场分布数据，改为折线图数据
-$user_action_line_labels = json_encode(array_keys($user_action_stat), JSON_UNESCAPED_UNICODE);
+$user_action_line_labels = json_encode(array_map(function($key) use ($action_chinese_names) {
+    return $action_chinese_names[$key] ?? $key;
+}, array_keys($user_action_stat)), JSON_UNESCAPED_UNICODE);
 $user_action_line_data = json_encode(array_values($user_action_stat));
 ?>
 <!DOCTYPE html>
@@ -440,7 +474,7 @@ $user_action_line_data = json_encode(array_values($user_action_stat));
                         <tr>
                             <td><?=highlight($log['time'], $search)?></td>
                             <td><?=highlight($log['user'], $search)?></td>
-                            <td><?=highlight($log['action'], $search)?></td>
+                            <td><?=highlight($action_chinese_names[$log['action']] ?? $log['action'], $search)?></td>
                             <td><?=highlight($log['detail'], $search)?></td>
                             <td><?=highlight($log['result'], $search)?></td>
                             <td><?=highlight($log['ip'], $search)?></td>

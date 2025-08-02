@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Level 1 (Low): 无防护
     if ($level == 1) {
-        $query = "SELECT id, username, email FROM users WHERE id = '$userid'";
+        $query = "SELECT id, username, nickname FROM users WHERE id = '$userid'";
         $result = $conn->query($query);
         if ($result) {
             while ($row = $result->fetch_assoc()) {
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($level == 2) {
         $userid = sanitize_sql($userid, 2);
         if ($userid !== null) {
-            $query = "SELECT id, username, email FROM users WHERE id = '$userid'";
+            $query = "SELECT id, username, nickname FROM users WHERE id = '$userid'";
             $result = $conn->query($query);
             if ($result) {
                 while ($row = $result->fetch_assoc()) {
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($level == 3) {
         $userid = sanitize_sql($userid, 3);
         if ($userid !== null) {
-            $query = "SELECT id, username, email FROM users WHERE id = $userid";
+            $query = "SELECT id, username, nickname FROM users WHERE id = $userid";
             $result = $conn->query($query);
             if ($result) {
                 while ($row = $result->fetch_assoc()) {
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Level 4 (Impossible): 预处理语句
     if ($level == 4) {
         if (preg_match('/^\d+$/', $userid)) {
-            $stmt = $conn->prepare("SELECT id, username, email FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT id, username, nickname FROM users WHERE id = ?");
             $stmt->bind_param("i", $userid);
             $stmt->execute();
             $res = $stmt->get_result();
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $rows[] = $row;
             }
             $stmt->close();
-            $sqli_result = "<pre>SQL: SELECT id, username, email FROM users WHERE id = ?</pre>";
+            $sqli_result = "<pre>SQL: SELECT id, username, nickname FROM users WHERE id = ?</pre>";
         } else {
             $sqli_result = "<pre>无效的用户ID格式。</pre>";
         }
@@ -126,22 +126,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 展示结果
     if (!empty($rows)) {
-        $sqli_result .= "<table class='result-table'><tr><th>ID</th><th>用户名</th><th>Email</th></tr>";
+        $sqli_result .= "<table class='result-table'><tr><th>ID</th><th>用户名</th><th>昵称</th></tr>";
         foreach ($rows as $row) {
-            $sqli_result .= "<tr><td>" . htmlspecialchars($row['id']) . "</td><td>" . htmlspecialchars($row['username']) . "</td><td>" . htmlspecialchars($row['email']) . "</td></tr>";
+            $sqli_result .= "<tr><td>" . htmlspecialchars($row['id']) . "</td><td>" . htmlspecialchars($row['username']) . "</td><td>" . htmlspecialchars($row['nickname'] ?? '') . "</td></tr>";
         }
         $sqli_result .= "</table>";
     } elseif (empty($sqli_result)) {
         $sqli_result = "<pre>未查询到结果。</pre>";
     }
     $result = (isset($sqli_result) && strpos($sqli_result, 'SQL:') !== false) ? 'success' : 'fail';
-    log_action($current_user, 'injection', 'SQL注入操作', $result);
+    log_action($current_user, 'sql_injection', 'SQL注入操作', $result);
 
     $error_count = 0;
     if (isset($sqli_message) && strpos($sqli_message, '成功') === false) {
         $error_count = 1;
     }
-    require_once __DIR__.'/../db.php';
     $user = $_SESSION['username'];
     $challenge = 'injection';
     $level_str = isset($level) ? (string)$level : 'easy';

@@ -67,7 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if ($result) $result->free();
         $blind_result = $found ? "<span style='color:green;'>存在该用户！</span>" : "<span style='color:red;'>不存在该用户！</span>";
-        $blind_result .= "<pre>SQL: " . htmlspecialchars($query) . "</pre>";
     }
 
     // Level 2 (Medium): 黑名单过滤
@@ -81,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if ($result) $result->free();
             $blind_result = $found ? "<span style='color:green;'>存在该用户！</span>" : "<span style='color:red;'>不存在该用户！</span>";
-            $blind_result .= "<pre>SQL: " . htmlspecialchars($query) . "</pre>";
         } else {
             $blind_result = "<pre>" . $blocked_message . "</pre>";
         }
@@ -98,7 +96,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if ($result) $result->free();
             $blind_result = $found ? "<span style='color:green;'>存在该用户！</span>" : "<span style='color:red;'>不存在该用户！</span>";
-            $blind_result .= "<pre>SQL: " . htmlspecialchars($query) . "</pre>";
         } else {
             $blind_result = "<pre>" . $blocked_message . "</pre>";
         }
@@ -117,16 +114,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($res) $res->free();
             $stmt->close();
             $blind_result = $found ? "<span style='color:green;'>存在该用户！</span>" : "<span style='color:red;'>不存在该用户！</span>";
-            $blind_result .= "<pre>SQL: SELECT id FROM users WHERE id = ?</pre>";
         } else {
             $blind_result = "<pre>无效的用户ID格式。</pre>";
         }
     }
 
+    // 记录操作日志
+    $current_user = $_SESSION['username'] ?? 'guest';
+    $result = (isset($blind_result) && strpos($blind_result, '存在') !== false) ? 'success' : 'fail';
+    log_action($current_user, 'blind_sql', 'SQL盲注操作', $result);
+
     if (isset($blind_result) && strpos($blind_result, '成功') === false) {
         $error_count = 1;
     }
-    require_once __DIR__.'/../db.php';
     $user = $_SESSION['username'];
     $challenge = 'blind';
     $level_str = isset($level) ? (string)$level : 'easy';
@@ -197,10 +197,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p>本关为SQL盲注靶场，仅返回“存在/不存在”提示，不显示具体数据。请尝试通过布尔型盲注等方式获取敏感信息。</p>
                 <span style="color:#d48806;">
                     <?php
-                        if ($level == 1) echo '当前级别无任何防护，可直接注入如 `1 or 1=1`、`1\' and length(username)=5 --+` 等。';
-                        if ($level == 2) echo '当前级别过滤了部分危险字符和关键字，可尝试大小写混淆、注释绕过等。';
-                        if ($level == 3) echo '当前级别仅允许数字类型输入，尝试类型转换绕过。';
-                        if ($level == 4) echo '当前级别使用了预处理语句，无法注入。';
+                        if ($level == 1) echo '当前级别无任何防护，可直接注入如 `1 or 1=1`、`1\' and length(username)=5 --+` 等布尔型盲注。';
+                        if ($level == 2) echo '当前级别过滤了部分危险字符和关键字，可尝试大小写混淆、注释绕过等布尔型盲注。';
+                        if ($level == 3) echo '当前级别仅允许数字类型输入，尝试类型转换绕过进行布尔型盲注。';
+                        if ($level == 4) echo '当前级别使用了预处理语句，无法进行盲注攻击。';
                     ?>
                 </span>
             </div>

@@ -58,11 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = '';
     if ($filename === '') {
         $result = 'fail';
-        log_action($current_user, 'file_include', '文件名为空', $result);
+        log_action($current_user, 'file_inclusion', '文件名为空', $result);
     } else {
         // ...文件包含/读取逻辑...
         $result = 'success'; // 或根据实际执行结果判断
-        log_action($current_user, 'file_include', '包含文件: ' . $filename, $result);
+        log_action($current_user, 'file_inclusion', '包含文件: ' . $filename, $result);
     }
     $error_count = 0;
     if (isset($file_message) && strpos($file_message, '成功') === false) {

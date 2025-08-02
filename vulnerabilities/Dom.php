@@ -26,6 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['level'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dom_message = $_POST['message'];
+    
+    // 记录操作日志
+    $current_user = $_SESSION['username'] ?? 'guest';
+    $result = (isset($dom_message) && !empty($dom_message)) ? 'success' : 'fail';
+    log_action($current_user, 'dom_xss', 'DOM型XSS操作', $result);
+    
     $error_count = 0;
     if (isset($dom_message) && strpos($dom_message, '成功') === false) {
         $error_count = 1;

@@ -36,6 +36,7 @@ $username = $_SESSION['username'];
                 <a href="role_analysis.php" class="btn-dark" style="margin-left:5px;">查看报告</a>
                 <?php if ($_SESSION['username'] === 'admin'): ?>
                     <a href="log_analysis.php" class="btn-dark">日志分析</a>
+                    <a href="admin_ai_defense.php" class="btn-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">🤖 AI防御系统</a>
                 <?php endif; ?>
             </div>
         </div>

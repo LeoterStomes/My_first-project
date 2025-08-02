@@ -77,6 +77,40 @@ $total_attempts = $total_attempts ?: 0;
 $overall_accuracy = $total_attempts > 0 ? round(100 * ($total_attempts - $total_errors) / $total_attempts, 1) : 0;
 // 难度标签
 $level_map = ['easy'=>'简单','medium'=>'中等','hard'=>'困难','impossible'=>'不可能'];
+
+// 一次性查出所有challenge的统计
+$sql = "SELECT challenge, level, COUNT(*) as attempts, SUM(error_count) as errors FROM challenge_records WHERE user=? GROUP BY challenge, level";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('s', $user);
+$stmt->execute();
+$res = $stmt->get_result();
+$challenge_stats = [];
+while ($row = $res->fetch_assoc()) {
+    $challenge = $row['challenge'];
+    $level = $row['level'];
+    $challenge_stats[$challenge][$level] = [
+        'attempts' => $row['attempts'],
+        'errors' => $row['errors']
+    ];
+}
+$stmt->close();
+
+// 生成进度条表格数据
+$challenge_labels = [];
+$user_scores = [];
+$max_score = 100;
+$avg_score = 60;
+foreach ($challenge_stats as $challenge => $levels) {
+    $challenge_labels[] = isset($challenge_name_map[$challenge]) ? $challenge_name_map[$challenge] : $challenge;
+    $completed = false;
+    foreach ($levels as $level => $stat) {
+        if ($stat['attempts'] > 0 && $stat['errors'] < $stat['attempts']) {
+            $completed = true;
+            break;
+        }
+    }
+    $user_scores[] = $completed ? $max_score : 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -84,6 +118,7 @@ $level_map = ['easy'=>'简单','medium'=>'中等','hard'=>'困难','impossible'=
     <meta charset="UTF-8">
     <title>角色分析 - 靶场平台</title>
     <link rel="stylesheet" href="style.css">
+    <!-- 已移除Chart.js等JS库引用 -->
     <style>
     body {
         background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
@@ -222,9 +257,11 @@ $level_map = ['easy'=>'简单','medium'=>'中等','hard'=>'困难','impossible'=
     @media (max-width: 900px) {
         .dashboard-row { flex-direction: column; gap: 18px; }
     }
+    .radar-container { max-width: 500px; margin: 0 auto 32px auto; background: #fff; border-radius: 18px; box-shadow: 0 4px 24px #0001; padding: 24px; }
     </style>
 </head>
 <body>
+<!-- 删除原有直接显示的靶场能力表现表格，只保留弹窗按钮和弹窗内容 -->
 <div class="dashboard-main">
     <div class="analysis-title" style="text-align:center;font-size:2.1em;font-weight:700;color:#2a5;margin-bottom:10px;letter-spacing:1px;">我的角色分析报告</div>
     <!-- 统计卡片区 -->
@@ -263,6 +300,7 @@ $level_map = ['easy'=>'简单','medium'=>'中等','hard'=>'困难','impossible'=
                 </select>
                 <!-- 新增重置靶场按钮 -->
                 <button type="button" class="btn-action" style="margin-left:10px;" onclick="showResetModal()">重置靶场</button>
+                <button type="button" class="btn-action" style="margin-left:10px;background:#36a2eb;" onclick="showAbilityModal()">查看能力表</button>
             </form>
             <!-- 重置确认弹窗 -->
             <div id="resetModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
@@ -398,5 +436,80 @@ $level_map = ['easy'=>'简单','medium'=>'中等','hard'=>'困难','impossible'=
         </div>
     </div>
 </div>
+<!-- 能力表弹窗 -->
+<div id="abilityModal" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:18px;box-shadow:0 4px 24px #0002;padding:32px 32px 24px 32px;max-width:600px;width:96vw;position:relative;">
+    <div style="font-size:1.2em;font-weight:bold;margin-bottom:18px;text-align:center;">演练评估报告</div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="background:#f5f6fa;color:#2a5;">
+          <th style="padding:8px 10px;text-align:left;">靶场</th>
+          <th style="padding:8px 10px;text-align:center;color:#43a047;">我的分数</th>
+          <th style="padding:8px 10px;text-align:center;color:#43a047;">平均水平</th>
+          <th style="padding:8px 10px;text-align:center;">进度</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php if (count($challenge_labels) > 0): ?>
+          <?php foreach ($challenge_labels as $i => $label): ?>
+          <tr>
+            <td style="padding:8px 10px;"> <?=htmlspecialchars($label)?> </td>
+            <td style="padding:8px 10px;text-align:center;"> <?=$user_scores[$i]?> </td>
+            <td style="padding:8px 10px;text-align:center;"> <?=$avg_score?> </td>
+            <td style="padding:8px 10px;min-width:120px;">
+              <div style="background:#e6e8ef;border-radius:9px;overflow:hidden;height:18px;position:relative;">
+                <div style="width:<?=intval($avg_score)?>%;background:#b3d4fc;height:8px;position:absolute;left:0;top:5px;opacity:0.7;z-index:1;"></div>
+                <div style="width:<?=intval($user_scores[$i])?>%;background:#ff6384;height:18px;position:absolute;left:0;top:0;z-index:2;transition:width 0.3s;"></div>
+                <span style="position:relative;z-index:3;display:block;text-align:center;color:#222;font-size:0.95em;line-height:18px;"> <?=intval($user_scores[$i])?>/100 </span>
+              </div>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <tr><td colspan="4" style="text-align:center;color:#888;padding:18px;">暂无靶场数据，完成任意靶场后可查看能力表现。</td></tr>
+        <?php endif; ?>
+      </tbody>
+    </table>
+    <!-- 折线图区（纯CSS实现） -->
+    <?php if (count($user_scores) > 1): ?>
+    <div style="margin:32px 0 0 0;">
+      <div style="font-size:1em;font-weight:500;margin-bottom:8px;color:#3f51b5;text-align:center;">分数变化趋势</div>
+      <div style="width:100%;height:120px;position:relative;">
+        <?php
+        // 生成折线点和线
+        $maxY = 100;
+        $count = count($user_scores);
+        $points = [];
+        for ($i=0; $i<$count; $i++) {
+          $x = 20 + ($i * (520/($count-1)));
+          $y = 100 - ($user_scores[$i] / $maxY * 100) + 10;
+          $points[] = [$x, $y];
+        }
+        ?>
+        <svg width="560" height="120" style="display:block;margin:0 auto;">
+          <polyline fill="none" stroke="#3f51b5" stroke-width="3" points="<?php foreach($points as $p) echo $p[0].','.$p[1].' '; ?>" />
+          <?php foreach($points as $i=>$p): ?>
+            <circle cx="<?=$p[0]?>" cy="<?=$p[1]?>" r="5" fill="#ff6384" />
+          <?php endforeach; ?>
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-size:0.95em;color:#888;margin-top:2px;">
+          <?php foreach($challenge_labels as $label): ?>
+            <span style="width:80px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"> <?=htmlspecialchars($label)?> </span>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
+    <button onclick="hideAbilityModal()" style="margin:32px auto 0 auto;display:block;background:#3f51b5;color:#fff;border:none;border-radius:8px;padding:8px 32px;font-size:1em;">关闭</button>
+  </div>
+</div>
+<script>
+function showAbilityModal() {
+  document.getElementById('abilityModal').style.display = 'flex';
+}
+function hideAbilityModal() {
+  document.getElementById('abilityModal').style.display = 'none';
+}
+</script>
 </body>
 </html> 

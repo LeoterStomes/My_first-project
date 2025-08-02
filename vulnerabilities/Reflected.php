@@ -76,13 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // 这里假设有变量 $reflected_result 表示操作结果
     $result = (isset($reflected_result) && strpos($reflected_result, '成功') !== false) ? 'success' : 'fail';
+    require_once __DIR__.'/../db.php';
     log_action($current_user, 'reflected_xss', '反射型XSS操作', $result);
 
     $error_count = 0;
     if (isset($reflected_message) && strpos($reflected_message, '成功') === false) {
         $error_count = 1;
     }
-    require_once __DIR__.'/../db.php';
     $user = $_SESSION['username'];
     $challenge = 'reflected';
     $level_str = isset($level) ? (string)$level : 'easy';

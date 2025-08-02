@@ -89,11 +89,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 每次提交后都重新生成验证码
     $_SESSION['captcha_code'] = generate_captcha($level);
 
+    // 记录操作日志
+    $current_user = $_SESSION['username'] ?? 'guest';
+    $result = (isset($captcha_result) && strpos($captcha_result, '成功') !== false) ? 'success' : 'fail';
+    require_once __DIR__.'/../db.php';
+    log_action($current_user, 'insecure_captcha', '不安全验证码操作', $result);
+
     $error_count = 0;
     if (isset($captcha_result) && strpos($captcha_result, '成功') === false) {
         $error_count = 1;
     }
-    require_once __DIR__.'/../db.php';
     $user = $_SESSION['username'];
     $challenge = 'insecure';
     $level_str = isset($level) ? (string)$level : 'easy';
